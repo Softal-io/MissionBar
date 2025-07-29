@@ -166,52 +166,56 @@ struct ProcessRowView: View {
             
             // Action buttons
             HStack(spacing: 4) {
-                if process.isKillable {
-                    // Terminate button
-                    Button(action: {
+                // Terminate button
+                Button(action: {
+                    if process.isKillable {
                         systemMonitor.killProcess(process)
-                    }) {
-                        Image(systemName: "stop.circle")
-                            .font(.system(size: 14))
-                            .foregroundColor(terminateHovered ? .orange : .secondary)
-                            .frame(width: 24, height: 24)
-                            .background(terminateHovered ? Color.orange.opacity(0.1) : Color.clear)
-                            .cornerRadius(4)
                     }
-                    .buttonStyle(.plain)
-                    .help("Terminate process")
-                    .onHover { hovered in
-                        terminateHovered = hovered
-                    }
-                    
-                    // Force kill button
-                    Button(action: {
+                }) {
+                    Image(systemName: "stop.circle")
+                        .font(.system(size: 14))
+                        .foregroundColor(process.isKillable ? (terminateHovered ? .orange : .secondary) : .secondary.opacity(0.5))
+                        .frame(width: 24, height: 24)
+                        .background((terminateHovered && process.isKillable) ? Color.orange.opacity(0.1) : Color.clear)
+                        .cornerRadius(4)
+                }
+                .buttonStyle(.plain)
+                .help(process.isKillable ? "Terminate process" : "Cannot terminate system process")
+                .disabled(!process.isKillable)
+                .onHover { hovered in
+                    terminateHovered = hovered
+                }
+                
+                // Force kill button
+                Button(action: {
+                    if process.isKillable {
                         showingKillConfirmation = true
-                    }) {
-                        Image(systemName: "xmark.circle")
-                            .font(.system(size: 14))
-                            .foregroundColor(forceKillHovered ? .red : .secondary)
-                            .frame(width: 24, height: 24)
-                            .background(forceKillHovered ? Color.red.opacity(0.1) : Color.clear)
-                            .cornerRadius(4)
                     }
-                    .buttonStyle(.plain)
-                    .help("Force kill process")
-                    .onHover { hovered in
-                        forceKillHovered = hovered
+                }) {
+                    Image(systemName: "xmark.circle")
+                        .font(.system(size: 14))
+                        .foregroundColor(process.isKillable ? (forceKillHovered ? .red : .secondary) : .secondary.opacity(0.5))
+                        .frame(width: 24, height: 24)
+                        .background((forceKillHovered && process.isKillable) ? Color.red.opacity(0.1) : Color.clear)
+                        .cornerRadius(4)
+                }
+                .buttonStyle(.plain)
+                .help(process.isKillable ? "Force kill process" : "Cannot force kill system process")
+                .disabled(!process.isKillable)
+                .onHover { hovered in
+                    forceKillHovered = hovered
+                }
+                .confirmationDialog(
+                    "Force Kill Process",
+                    isPresented: $showingKillConfirmation,
+                    titleVisibility: .visible
+                ) {
+                    Button("Force Kill", role: .destructive) {
+                        systemMonitor.forceKillProcess(process)
                     }
-                    .confirmationDialog(
-                        "Force Kill Process",
-                        isPresented: $showingKillConfirmation,
-                        titleVisibility: .visible
-                    ) {
-                        Button("Force Kill", role: .destructive) {
-                            systemMonitor.forceKillProcess(process)
-                        }
-                        Button("Cancel", role: .cancel) { }
-                    } message: {
-                        Text("Are you sure you want to force kill \(process.name)? This may cause data loss.")
-                    }
+                    Button("Cancel", role: .cancel) { }
+                } message: {
+                    Text("Are you sure you want to force kill \(process.name)? This may cause data loss.")
                 }
             }
         }

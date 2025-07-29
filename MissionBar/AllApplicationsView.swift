@@ -144,7 +144,6 @@ struct ApplicationRowView: View {
     @EnvironmentObject var systemMonitor: SystemMonitor
     @State private var showingUninstallConfirmation = false
     @State private var isHovered = false
-    @State private var showInFinderHovered = false
     @State private var launchHovered = false
     @State private var uninstallHovered = false
     
@@ -207,71 +206,56 @@ struct ApplicationRowView: View {
             
             // Action buttons
             HStack(spacing: 4) {
-                // Show in Finder button
+                // Launch button
                 Button(action: {
-                    NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: application.path.path)
+                    if !application.isRunning {
+                        NSWorkspace.shared.openApplication(at: application.path, configuration: NSWorkspace.OpenConfiguration())
+                    }
                 }) {
-                    Image(systemName: "folder")
+                    Image(systemName: application.isRunning ? "checkmark.circle" : "play.circle")
                         .font(.system(size: 14))
-                        .foregroundColor(showInFinderHovered ? .blue : .secondary)
+                        .foregroundColor(application.isRunning ? .green : (launchHovered && !application.isRunning ? .green : .secondary))
                         .frame(width: 24, height: 24)
-                        .background(showInFinderHovered ? Color.blue.opacity(0.1) : Color.clear)
+                        .background((launchHovered && !application.isRunning) ? Color.green.opacity(0.1) : Color.clear)
                         .cornerRadius(4)
                 }
                 .buttonStyle(.plain)
-                .help("Show in Finder")
+                .help(application.isRunning ? "Application is running" : "Launch application")
+                .disabled(application.isRunning)
                 .onHover { hovered in
-                    showInFinderHovered = hovered
-                }
-                
-                // Launch button (if not running)
-                if !application.isRunning {
-                    Button(action: {
-                        NSWorkspace.shared.openApplication(at: application.path, configuration: NSWorkspace.OpenConfiguration())
-                    }) {
-                        Image(systemName: "play.circle")
-                            .font(.system(size: 14))
-                            .foregroundColor(launchHovered ? .green : .secondary)
-                            .frame(width: 24, height: 24)
-                            .background(launchHovered ? Color.green.opacity(0.1) : Color.clear)
-                            .cornerRadius(4)
-                    }
-                    .buttonStyle(.plain)
-                    .help("Launch application")
-                    .onHover { hovered in
-                        launchHovered = hovered
-                    }
+                    launchHovered = hovered
                 }
                 
                 // Uninstall button
-                if application.canUninstall {
-                    Button(action: {
+                Button(action: {
+                    if application.canUninstall {
                         showingUninstallConfirmation = true
-                    }) {
-                        Image(systemName: "trash")
-                            .font(.system(size: 14))
-                            .foregroundColor(uninstallHovered ? .red : .secondary)
-                            .frame(width: 24, height: 24)
-                            .background(uninstallHovered ? Color.red.opacity(0.1) : Color.clear)
-                            .cornerRadius(4)
                     }
-                    .buttonStyle(.plain)
-                    .help("Uninstall application")
-                    .onHover { hovered in
-                        uninstallHovered = hovered
+                }) {
+                    Image(systemName: "trash")
+                        .font(.system(size: 14))
+                        .foregroundColor(application.canUninstall ? (uninstallHovered ? .red : .secondary) : .secondary.opacity(0.5))
+                        .frame(width: 24, height: 24)
+                        .background((uninstallHovered && application.canUninstall) ? Color.red.opacity(0.1) : Color.clear)
+                        .cornerRadius(4)
+                }
+                .buttonStyle(.plain)
+                .help(application.canUninstall ? "Uninstall application" : "Cannot uninstall system application")
+                .disabled(!application.canUninstall)
+                .onHover { hovered in
+                    uninstallHovered = hovered
+                }
+                .confirmationDialog(
+                    "Uninstall Application",
+                    isPresented: $showingUninstallConfirmation,
+                    titleVisibility: .visible
+                ) {
+                    Button("Move to Trash", role: .destructive) {
+                        systemMonitor.uninstallApplication(application)
                     }
-                    .confirmationDialog(
-                        "Uninstall Application",
-                        isPresented: $showingUninstallConfirmation,
-                        titleVisibility: .visible
-                    ) {
-                        Button("Move to Trash", role: .destructive) {
-                            systemMonitor.uninstallApplication(application)
-                        }
-                        Button("Cancel", role: .cancel) { }
-                    } message: {
-                        Text("Are you sure you want to move \(application.name) to the Trash? This action cannot be undone.")
-                    }
+                    Button("Cancel", role: .cancel) { }
+                } message: {
+                    Text("Are you sure you want to move \(application.name) to the Trash? This action cannot be undone.")
                 }
             }
         }

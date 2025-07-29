@@ -47,6 +47,7 @@ struct InstalledApplication: Identifiable, Hashable {
 enum AppTab: String, CaseIterable {
     case running = "Running"
     case all = "Applications"
+    case about = "About"
     
     var icon: String {
         switch self {
@@ -54,8 +55,18 @@ enum AppTab: String, CaseIterable {
             return "play.circle"
         case .all:
             return "square.grid.2x2"
+        case .about:
+            return "info.circle"
         }
     }
+}
+
+struct SoftalApp: Identifiable, Hashable {
+    let id = UUID()
+    let name: String
+    let icon: String
+    let appStoreURL: String?
+    let websiteURL: String?
 }
 
 struct CustomConfirmationView: View {

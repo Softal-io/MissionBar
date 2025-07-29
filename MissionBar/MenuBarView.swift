@@ -107,6 +107,8 @@ struct MenuBarView: View {
                     RunningProcessesView()
                 case .all:
                     AllApplicationsView()
+                case .about:
+                    AboutView()
                 }
             }
             .environmentObject(systemMonitor)

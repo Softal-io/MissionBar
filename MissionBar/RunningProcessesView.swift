@@ -28,9 +28,9 @@ struct RunningProcessesView: View {
             case .name:
                 comparison = lhs.name < rhs.name
             case .cpu:
-                comparison = lhs.cpuUsage > rhs.cpuUsage
+                comparison = lhs.cpuUsage < rhs.cpuUsage
             case .memory:
-                comparison = lhs.memoryUsage > rhs.memoryUsage
+                comparison = lhs.memoryUsage < rhs.memoryUsage
             }
             return sortAscending ? comparison : !comparison
         }

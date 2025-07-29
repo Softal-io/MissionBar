@@ -38,10 +38,10 @@ struct AllApplicationsView: View {
             case .name:
                 comparison = lhs.name < rhs.name
             case .size:
-                comparison = lhs.storageSize > rhs.storageSize
+                comparison = lhs.storageSize < rhs.storageSize
             case .status:
                 if lhs.isRunning != rhs.isRunning {
-                    comparison = lhs.isRunning && !rhs.isRunning
+                    comparison = !lhs.isRunning && rhs.isRunning
                 } else {
                     comparison = lhs.name < rhs.name
                 }

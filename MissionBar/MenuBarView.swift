@@ -105,13 +105,14 @@ struct MenuBarView: View {
                 switch selectedTab {
                 case .running:
                     RunningProcessesView()
+                        .environmentObject(systemMonitor)
                 case .all:
                     AllApplicationsView()
+                        .environmentObject(systemMonitor)
                 case .about:
                     AboutView()
                 }
             }
-            .environmentObject(systemMonitor)
         }
         .frame(width: 480, height: 600)
         .background(Color(NSColor.windowBackgroundColor))

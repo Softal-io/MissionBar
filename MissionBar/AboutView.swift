@@ -7,33 +7,35 @@
 
 import SwiftUI
 
+// Static data outside the view to prevent recreation
+private let otherApps = [
+    SoftalApp(
+        name: "Presentify",
+        icon: "PresentifyIcon",
+        appStoreURL: "https://apps.apple.com/app/apple-store/id1507246666?pt=121362679&ct=missionbar&mt=8",
+        websiteURL: "https://presentifyapp.com"
+    ),
+    SoftalApp(
+        name: "FaceScreen",
+        icon: "FaceScreenIcon",
+        appStoreURL: "https://apps.apple.com/app/apple-store/id6702028512?pt=121362679&ct=missionbar&mt=8",
+        websiteURL: "https://facescreenapp.com"
+    ),
+    SoftalApp(
+        name: "ToDoBar",
+        icon: "ToDoBarIcon",
+        appStoreURL: "https://apps.apple.com/app/apple-store/id6470928617?pt=121362679&ct=missionbar&mt=8",
+        websiteURL: "https://todobarapp.com"
+    ),
+    SoftalApp(
+        name: "SimpleFill",
+        icon: "SimpleFillIcon",
+        appStoreURL: "https://apps.apple.com/app/apple-store/id6743927264?pt=121362679&ct=missionbar&mt=8",
+        websiteURL: "https://simplefillapp.com"
+    )
+]
+
 struct AboutView: View {
-    private let otherApps = [
-        SoftalApp(
-            name: "Presentify",
-            icon: "PresentifyIcon",
-            appStoreURL: "https://apps.apple.com/app/apple-store/id1507246666?pt=121362679&ct=missionbar&mt=8",
-            websiteURL: "https://presentifyapp.com"
-        ),
-        SoftalApp(
-            name: "FaceScreen",
-            icon: "FaceScreenIcon",
-            appStoreURL: "https://apps.apple.com/app/apple-store/id6702028512?pt=121362679&ct=missionbar&mt=8",
-            websiteURL: "https://facescreenapp.com"
-        ),
-        SoftalApp(
-            name: "ToDoBar",
-            icon: "ToDoBarIcon",
-            appStoreURL: "https://apps.apple.com/app/apple-store/id6470928617?pt=121362679&ct=missionbar&mt=8",
-            websiteURL: "https://todobarapp.com"
-        ),
-        SoftalApp(
-            name: "SimpleFill",
-            icon: "SimpleFillIcon",
-            appStoreURL: "https://apps.apple.com/app/apple-store/id6743927264?pt=121362679&ct=missionbar&mt=8",
-            websiteURL: "https://simplefillapp.com"
-        )
-    ]
     
     var body: some View {
         ScrollView {

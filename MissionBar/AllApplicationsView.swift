@@ -49,36 +49,42 @@ struct AllApplicationsView: View {
             // Search and filter controls
             VStack(spacing: 8) {
                 HStack {
-                    HStack {
-                        Image(systemName: "magnifyingglass")
-                            .foregroundColor(.secondary)
-                            .font(.system(size: 12))
-                        
-                        TextField("Search applications...", text: $searchText)
-                            .textFieldStyle(.plain)
-                            .font(.system(size: 12))
-                    }
-                    .padding(8)
-                    .background(Color(NSColor.controlBackgroundColor))
-                    .cornerRadius(6)
+                    SearchBoxView(searchText: $searchText, placeholder: "Search applications...")
                     
                     Menu {
                         ForEach(AppSortOption.allCases, id: \.self) { option in
-                            Button(option.displayName) {
+                            Button(action: {
                                 sortBy = option
+                            }) {
+                                HStack {
+                                    Text(option.displayName)
+                                    Spacer()
+                                    if sortBy == option {
+                                        Image(systemName: "checkmark")
+                                            .foregroundColor(.blue)
+                                    }
+                                }
                             }
                         }
                     } label: {
-                        HStack(spacing: 4) {
+                        HStack(spacing: 6) {
                             Text(sortBy.displayName)
                                 .font(.system(size: 12))
-                            Image(systemName: "chevron.down")
-                                .font(.system(size: 10))
+                            Image(systemName: "chevron.up.chevron.down")
+                                .font(.system(size: 8))
                         }
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.primary)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(Color(NSColor.controlBackgroundColor))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 6)
+                                .stroke(Color.secondary.opacity(0.3), lineWidth: 0.5)
+                        )
+                        .cornerRadius(6)
                     }
                     .menuStyle(.borderlessButton)
-                    .frame(width: 80)
+                    .frame(width: 100)
                 }
                 
                 HStack {
@@ -138,6 +144,9 @@ struct ApplicationRowView: View {
     @EnvironmentObject var systemMonitor: SystemMonitor
     @State private var showingUninstallConfirmation = false
     @State private var isHovered = false
+    @State private var showInFinderHovered = false
+    @State private var launchHovered = false
+    @State private var uninstallHovered = false
     
     var body: some View {
         HStack(spacing: 12) {
@@ -172,8 +181,19 @@ struct ApplicationRowView: View {
                             .foregroundColor(.secondary)
                     }
                     
-                    Label(application.formattedSize, systemImage: "internaldrive")
-                        .foregroundColor(.secondary)
+                    HStack(spacing: 4) {
+                        Label(application.formattedSize, systemImage: "internaldrive")
+                            .foregroundColor(.secondary)
+                        if !application.canUninstall {
+                            Text("System")
+                                .font(.system(size: 10))
+                                .foregroundColor(.secondary)
+                                .padding(.horizontal, 4)
+                                .padding(.vertical, 1)
+                                .background(Color.secondary.opacity(0.1))
+                                .cornerRadius(3)
+                        }
+                    }
                 }
                 .font(.system(size: 11))
                 
@@ -186,17 +206,23 @@ struct ApplicationRowView: View {
             Spacer()
             
             // Action buttons
-            HStack(spacing: 8) {
+            HStack(spacing: 4) {
                 // Show in Finder button
                 Button(action: {
                     NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: application.path.path)
                 }) {
                     Image(systemName: "folder")
                         .font(.system(size: 14))
-                        .foregroundColor(.blue)
+                        .foregroundColor(showInFinderHovered ? .blue : .secondary)
+                        .frame(width: 24, height: 24)
+                        .background(showInFinderHovered ? Color.blue.opacity(0.1) : Color.clear)
+                        .cornerRadius(4)
                 }
                 .buttonStyle(.plain)
                 .help("Show in Finder")
+                .onHover { hovered in
+                    showInFinderHovered = hovered
+                }
                 
                 // Launch button (if not running)
                 if !application.isRunning {
@@ -205,10 +231,16 @@ struct ApplicationRowView: View {
                     }) {
                         Image(systemName: "play.circle")
                             .font(.system(size: 14))
-                            .foregroundColor(.green)
+                            .foregroundColor(launchHovered ? .green : .secondary)
+                            .frame(width: 24, height: 24)
+                            .background(launchHovered ? Color.green.opacity(0.1) : Color.clear)
+                            .cornerRadius(4)
                     }
                     .buttonStyle(.plain)
                     .help("Launch application")
+                    .onHover { hovered in
+                        launchHovered = hovered
+                    }
                 }
                 
                 // Uninstall button
@@ -218,10 +250,16 @@ struct ApplicationRowView: View {
                     }) {
                         Image(systemName: "trash")
                             .font(.system(size: 14))
-                            .foregroundColor(.red)
+                            .foregroundColor(uninstallHovered ? .red : .secondary)
+                            .frame(width: 24, height: 24)
+                            .background(uninstallHovered ? Color.red.opacity(0.1) : Color.clear)
+                            .cornerRadius(4)
                     }
                     .buttonStyle(.plain)
                     .help("Uninstall application")
+                    .onHover { hovered in
+                        uninstallHovered = hovered
+                    }
                     .confirmationDialog(
                         "Uninstall Application",
                         isPresented: $showingUninstallConfirmation,
@@ -234,14 +272,6 @@ struct ApplicationRowView: View {
                     } message: {
                         Text("Are you sure you want to move \(application.name) to the Trash? This action cannot be undone.")
                     }
-                } else {
-                    Text("System")
-                        .font(.system(size: 10))
-                        .foregroundColor(.secondary)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(Color.secondary.opacity(0.2))
-                        .cornerRadius(4)
                 }
             }
         }

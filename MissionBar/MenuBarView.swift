@@ -10,6 +10,9 @@ import SwiftUI
 struct MenuBarView: View {
     @EnvironmentObject var systemMonitor: SystemMonitor
     @State private var selectedTab: AppTab = .running
+    @State private var hoveredTab: AppTab?
+    @State private var hoveredRefresh = false
+    @State private var hoveredQuit = false
     
     var body: some View {
         VStack(spacing: 0) {
@@ -30,11 +33,18 @@ struct MenuBarView: View {
                         .padding(.vertical, 8)
                         .background(
                             selectedTab == tab ? 
-                            Color.accentColor : Color.clear,
+                            Color.accentColor : 
+                            (hoveredTab == tab ? Color.secondary.opacity(0.1) : Color.clear),
                             in: RoundedRectangle(cornerRadius: 6)
                         )
                     }
                     .buttonStyle(.plain)
+                    .onHover { isHovered in
+                        withAnimation(.easeInOut(duration: 0.15)) {
+                            hoveredTab = isHovered ? tab : nil
+                        }
+                    }
+                    .help(tab.rawValue)
                 }
                 
                 Spacer()
@@ -48,19 +58,41 @@ struct MenuBarView: View {
                     Image(systemName: "arrow.clockwise")
                         .font(.system(size: 12))
                         .foregroundColor(.secondary)
+                        .frame(width: 24, height: 24)
+                        .background(
+                            RoundedRectangle(cornerRadius: 6)
+                                .fill(hoveredRefresh ? Color.secondary.opacity(0.15) : Color.clear)
+                        )
                 }
                 .buttonStyle(.plain)
                 .disabled(systemMonitor.isLoading)
+                .onHover { isHovered in
+                    withAnimation(.easeInOut(duration: 0.15)) {
+                        hoveredRefresh = isHovered
+                    }
+                }
+                .help("Refresh data")
                 
                 // Quit button
                 Button(action: {
                     NSApplication.shared.terminate(nil)
                 }) {
-                    Image(systemName: "xmark.circle.fill")
+                    Image(systemName: "power")
                         .font(.system(size: 12))
                         .foregroundColor(.secondary)
+                        .frame(width: 24, height: 24)
+                        .background(
+                            RoundedRectangle(cornerRadius: 6)
+                                .fill(hoveredQuit ? Color.secondary.opacity(0.15) : Color.clear)
+                        )
                 }
                 .buttonStyle(.plain)
+                .onHover { isHovered in
+                    withAnimation(.easeInOut(duration: 0.15)) {
+                        hoveredQuit = isHovered
+                    }
+                }
+                .help("Quit MissionBar")
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 12)

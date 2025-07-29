@@ -13,7 +13,7 @@ struct MissionBarApp: App {
     @StateObject private var systemMonitor = SystemMonitor()
     
     var body: some Scene {
-        MenuBarExtra("MissionBar", systemImage: "cpu") {
+        MenuBarExtra("MissionBar", systemImage: "app") {
             MenuBarView()
                 .environmentObject(systemMonitor)
         }

@@ -35,36 +35,42 @@ struct RunningProcessesView: View {
         VStack(spacing: 0) {
             // Search and sort controls
             HStack {
-                HStack {
-                    Image(systemName: "magnifyingglass")
-                        .foregroundColor(.secondary)
-                        .font(.system(size: 12))
-                    
-                    TextField("Search processes...", text: $searchText)
-                        .textFieldStyle(.plain)
-                        .font(.system(size: 12))
-                }
-                .padding(8)
-                .background(Color(NSColor.controlBackgroundColor))
-                .cornerRadius(6)
+                SearchBoxView(searchText: $searchText, placeholder: "Search processes...")
                 
                 Menu {
                     ForEach(ProcessSortOption.allCases, id: \.self) { option in
-                        Button(option.displayName) {
+                        Button(action: {
                             sortBy = option
+                        }) {
+                            HStack {
+                                Text(option.displayName)
+                                Spacer()
+                                if sortBy == option {
+                                    Image(systemName: "checkmark")
+                                        .foregroundColor(.blue)
+                                }
+                            }
                         }
                     }
                 } label: {
-                    HStack(spacing: 4) {
+                    HStack(spacing: 6) {
                         Text(sortBy.displayName)
                             .font(.system(size: 12))
-                        Image(systemName: "chevron.down")
-                            .font(.system(size: 10))
+                        Image(systemName: "chevron.up.chevron.down")
+                            .font(.system(size: 8))
                     }
-                    .foregroundColor(.secondary)
+                    .foregroundColor(.primary)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(Color(NSColor.controlBackgroundColor))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 6)
+                            .stroke(Color.secondary.opacity(0.3), lineWidth: 0.5)
+                    )
+                    .cornerRadius(6)
                 }
                 .menuStyle(.borderlessButton)
-                .frame(width: 80)
+                .frame(width: 100)
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
@@ -110,6 +116,9 @@ struct ProcessRowView: View {
     let process: RunningProcess
     @EnvironmentObject var systemMonitor: SystemMonitor
     @State private var showingKillConfirmation = false
+    @State private var isHovered = false
+    @State private var terminateHovered = false
+    @State private var forceKillHovered = false
     
     var body: some View {
         HStack(spacing: 12) {
@@ -132,7 +141,18 @@ struct ProcessRowView: View {
                 
                 HStack(spacing: 16) {
                     Label(process.formattedCPU, systemImage: "cpu")
-                    Label(process.formattedMemory, systemImage: "memorychip")
+                    HStack(spacing: 4) {
+                        Label(process.formattedMemory, systemImage: "memorychip")
+                        if !process.isKillable {
+                            Text("System")
+                                .font(.system(size: 10))
+                                .foregroundColor(.secondary)
+                                .padding(.horizontal, 4)
+                                .padding(.vertical, 1)
+                                .background(Color.secondary.opacity(0.1))
+                                .cornerRadius(3)
+                        }
+                    }
                     if process.bundleIdentifier != nil {
                         Text("PID: \(process.pid)")
                             .foregroundColor(.secondary)
@@ -145,7 +165,7 @@ struct ProcessRowView: View {
             Spacer()
             
             // Action buttons
-            HStack(spacing: 6) {
+            HStack(spacing: 4) {
                 if process.isKillable {
                     // Terminate button
                     Button(action: {
@@ -153,10 +173,16 @@ struct ProcessRowView: View {
                     }) {
                         Image(systemName: "stop.circle")
                             .font(.system(size: 14))
-                            .foregroundColor(.orange)
+                            .foregroundColor(terminateHovered ? .orange : .secondary)
+                            .frame(width: 24, height: 24)
+                            .background(terminateHovered ? Color.orange.opacity(0.1) : Color.clear)
+                            .cornerRadius(4)
                     }
                     .buttonStyle(.plain)
                     .help("Terminate process")
+                    .onHover { hovered in
+                        terminateHovered = hovered
+                    }
                     
                     // Force kill button
                     Button(action: {
@@ -164,10 +190,16 @@ struct ProcessRowView: View {
                     }) {
                         Image(systemName: "xmark.circle")
                             .font(.system(size: 14))
-                            .foregroundColor(.red)
+                            .foregroundColor(forceKillHovered ? .red : .secondary)
+                            .frame(width: 24, height: 24)
+                            .background(forceKillHovered ? Color.red.opacity(0.1) : Color.clear)
+                            .cornerRadius(4)
                     }
                     .buttonStyle(.plain)
                     .help("Force kill process")
+                    .onHover { hovered in
+                        forceKillHovered = hovered
+                    }
                     .confirmationDialog(
                         "Force Kill Process",
                         isPresented: $showingKillConfirmation,
@@ -180,23 +212,17 @@ struct ProcessRowView: View {
                     } message: {
                         Text("Are you sure you want to force kill \(process.name)? This may cause data loss.")
                     }
-                } else {
-                    Text("System")
-                        .font(.system(size: 10))
-                        .foregroundColor(.secondary)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(Color.secondary.opacity(0.2))
-                        .cornerRadius(4)
                 }
             }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
-        .background(Color.clear)
+        .background(isHovered ? Color.secondary.opacity(0.05) : Color.clear)
         .contentShape(Rectangle())
-        .onHover { isHovered in
-            // Add subtle hover effect
+        .onHover { hovered in
+            withAnimation(.easeInOut(duration: 0.1)) {
+                isHovered = hovered
+            }
         }
     }
 }

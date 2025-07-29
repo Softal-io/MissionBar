@@ -52,7 +52,7 @@
 3. Build and run the project (⌘+R)
 
 #### Option 2: Download Release
-*Coming soon - Check the [Releases](../../releases) page for pre-built binaries*
+* Check the [Releases](../../releases) page for pre-built binaries (MissionBar.app file)
 
 ### First Launch
 1. After launching, MissionBar will appear in your menu bar

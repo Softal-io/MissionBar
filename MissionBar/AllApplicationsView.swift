@@ -11,6 +11,7 @@ struct AllApplicationsView: View {
     @EnvironmentObject var systemMonitor: SystemMonitor
     @State private var searchText = ""
     @State private var sortBy: AppSortOption = .name
+    @State private var sortAscending = true
     @State private var showOnlyUserApps = false
     @State private var showingUninstallConfirmation = false
     @State private var applicationToUninstall: InstalledApplication?
@@ -32,17 +33,20 @@ struct AllApplicationsView: View {
         
         // Sort
         return filtered.sorted { lhs, rhs in
+            let comparison: Bool
             switch sortBy {
             case .name:
-                return lhs.name < rhs.name
+                comparison = lhs.name < rhs.name
             case .size:
-                return lhs.storageSize > rhs.storageSize
+                comparison = lhs.storageSize > rhs.storageSize
             case .status:
                 if lhs.isRunning != rhs.isRunning {
-                    return lhs.isRunning && !rhs.isRunning
+                    comparison = lhs.isRunning && !rhs.isRunning
+                } else {
+                    comparison = lhs.name < rhs.name
                 }
-                return lhs.name < rhs.name
             }
+            return sortAscending ? comparison : !comparison
         }
     }
     
@@ -53,40 +57,8 @@ struct AllApplicationsView: View {
                 HStack {
                     SearchBoxView(searchText: $searchText, placeholder: "Search applications...")
                     
-                    Menu {
-                        ForEach(AppSortOption.allCases, id: \.self) { option in
-                            Button(action: {
-                                sortBy = option
-                            }) {
-                                HStack {
-                                    Text(option.displayName)
-                                    Spacer()
-                                    if sortBy == option {
-                                        Image(systemName: "checkmark")
-                                            .foregroundColor(.blue)
-                                    }
-                                }
-                            }
-                        }
-                    } label: {
-                        HStack(spacing: 6) {
-                            Text(sortBy.displayName)
-                                .font(.system(size: 12))
-                            Image(systemName: "chevron.up.chevron.down")
-                                .font(.system(size: 8))
-                        }
-                        .foregroundColor(.primary)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
-                        .background(Color(NSColor.controlBackgroundColor))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 6)
-                                .stroke(Color.secondary.opacity(0.3), lineWidth: 0.5)
-                        )
-                        .cornerRadius(6)
-                    }
-                    .menuStyle(.borderlessButton)
-                    .frame(width: 100)
+                    SortDropdownView(selectedOption: $sortBy, isAscending: $sortAscending)
+                        .frame(width: 120)
                 }
                 
                 HStack {

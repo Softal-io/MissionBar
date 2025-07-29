@@ -11,6 +11,7 @@ struct RunningProcessesView: View {
     @EnvironmentObject var systemMonitor: SystemMonitor
     @State private var searchText = ""
     @State private var sortBy: ProcessSortOption = .name
+    @State private var sortAscending = true
     @State private var showingKillConfirmation = false
     @State private var processToKill: RunningProcess?
     
@@ -22,14 +23,16 @@ struct RunningProcessesView: View {
             }
         
         return filtered.sorted { lhs, rhs in
+            let comparison: Bool
             switch sortBy {
             case .name:
-                return lhs.name < rhs.name
+                comparison = lhs.name < rhs.name
             case .cpu:
-                return lhs.cpuUsage > rhs.cpuUsage
+                comparison = lhs.cpuUsage > rhs.cpuUsage
             case .memory:
-                return lhs.memoryUsage > rhs.memoryUsage
+                comparison = lhs.memoryUsage > rhs.memoryUsage
             }
+            return sortAscending ? comparison : !comparison
         }
     }
     
@@ -39,40 +42,8 @@ struct RunningProcessesView: View {
             HStack {
                 SearchBoxView(searchText: $searchText, placeholder: "Search processes...")
                 
-                Menu {
-                    ForEach(ProcessSortOption.allCases, id: \.self) { option in
-                        Button(action: {
-                            sortBy = option
-                        }) {
-                            HStack {
-                                Text(option.displayName)
-                                Spacer()
-                                if sortBy == option {
-                                    Image(systemName: "checkmark")
-                                        .foregroundColor(.blue)
-                                }
-                            }
-                        }
-                    }
-                } label: {
-                    HStack(spacing: 6) {
-                        Text(sortBy.displayName)
-                            .font(.system(size: 12))
-                        Image(systemName: "chevron.up.chevron.down")
-                            .font(.system(size: 8))
-                    }
-                    .foregroundColor(.primary)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(Color(NSColor.controlBackgroundColor))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 6)
-                            .stroke(Color.secondary.opacity(0.3), lineWidth: 0.5)
-                    )
-                    .cornerRadius(6)
-                }
-                .menuStyle(.borderlessButton)
-                .frame(width: 100)
+                SortDropdownView(selectedOption: $sortBy, isAscending: $sortAscending)
+                    .frame(width: 120)
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 12)

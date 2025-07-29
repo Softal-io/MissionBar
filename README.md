@@ -35,7 +35,7 @@
 ## 🚀 Getting Started
 
 ### System Requirements
-- macOS 13.0 (Ventura) or later
+- macOS 15.0 (Sequoia) or later
 - 64-bit Intel or Apple Silicon Mac
 
 ### Installation

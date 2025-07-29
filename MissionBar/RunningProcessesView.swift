@@ -11,6 +11,8 @@ struct RunningProcessesView: View {
     @EnvironmentObject var systemMonitor: SystemMonitor
     @State private var searchText = ""
     @State private var sortBy: ProcessSortOption = .name
+    @State private var showingKillConfirmation = false
+    @State private var processToKill: RunningProcess?
     
     private var filteredProcesses: [RunningProcess] {
         let filtered = searchText.isEmpty ? 
@@ -101,21 +103,47 @@ struct RunningProcessesView: View {
                 ScrollView {
                     LazyVStack(spacing: 1) {
                         ForEach(filteredProcesses) { process in
-                            ProcessRowView(process: process)
-                                .environmentObject(systemMonitor)
+                            ProcessRowView(
+                                process: process,
+                                onForceKillRequest: { process in
+                                    processToKill = process
+                                    showingKillConfirmation = true
+                                }
+                            )
+                            .environmentObject(systemMonitor)
                         }
                     }
                     .padding(.vertical, 8)
                 }
             }
         }
+        .overlay(
+            showingKillConfirmation && processToKill != nil ?
+            CustomConfirmationView(
+                title: "Force Kill Process",
+                message: "Are you sure you want to force kill \(processToKill?.name ?? "this process")? This may cause data loss.",
+                destructiveButtonText: "Force Kill",
+                cancelButtonText: "Cancel",
+                onConfirm: {
+                    if let process = processToKill {
+                        systemMonitor.forceKillProcess(process)
+                    }
+                    showingKillConfirmation = false
+                    processToKill = nil
+                },
+                onCancel: {
+                    showingKillConfirmation = false
+                    processToKill = nil
+                }
+            ) : nil
+        )
     }
 }
 
 struct ProcessRowView: View {
     let process: RunningProcess
+    let onForceKillRequest: (RunningProcess) -> Void
     @EnvironmentObject var systemMonitor: SystemMonitor
-    @State private var showingKillConfirmation = false
     @State private var isHovered = false
     @State private var terminateHovered = false
     @State private var forceKillHovered = false
@@ -189,7 +217,7 @@ struct ProcessRowView: View {
                 // Force kill button
                 Button(action: {
                     if process.isKillable {
-                        showingKillConfirmation = true
+                        onForceKillRequest(process)
                     }
                 }) {
                     Image(systemName: "xmark.circle")
@@ -204,18 +232,6 @@ struct ProcessRowView: View {
                 .disabled(!process.isKillable)
                 .onHover { hovered in
                     forceKillHovered = hovered
-                }
-                .confirmationDialog(
-                    "Force Kill Process",
-                    isPresented: $showingKillConfirmation,
-                    titleVisibility: .visible
-                ) {
-                    Button("Force Kill", role: .destructive) {
-                        systemMonitor.forceKillProcess(process)
-                    }
-                    Button("Cancel", role: .cancel) { }
-                } message: {
-                    Text("Are you sure you want to force kill \(process.name)? This may cause data loss.")
                 }
             }
         }

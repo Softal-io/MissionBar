@@ -12,6 +12,8 @@ struct AllApplicationsView: View {
     @State private var searchText = ""
     @State private var sortBy: AppSortOption = .name
     @State private var showOnlyUserApps = false
+    @State private var showingUninstallConfirmation = false
+    @State private var applicationToUninstall: InstalledApplication?
     
     private var filteredApplications: [InstalledApplication] {
         var filtered = systemMonitor.installedApplications
@@ -128,21 +130,47 @@ struct AllApplicationsView: View {
                 ScrollView {
                     LazyVStack(spacing: 1) {
                         ForEach(filteredApplications) { app in
-                            ApplicationRowView(application: app)
-                                .environmentObject(systemMonitor)
+                            ApplicationRowView(
+                                application: app,
+                                onUninstallRequest: { application in
+                                    applicationToUninstall = application
+                                    showingUninstallConfirmation = true
+                                }
+                            )
+                            .environmentObject(systemMonitor)
                         }
                     }
                     .padding(.vertical, 8)
                 }
             }
         }
+        .overlay(
+            showingUninstallConfirmation && applicationToUninstall != nil ? 
+            CustomConfirmationView(
+                title: "Uninstall Application",
+                message: "Are you sure you want to move \(applicationToUninstall?.name ?? "this application") to the Trash? This action cannot be undone.",
+                destructiveButtonText: "Move to Trash",
+                cancelButtonText: "Cancel",
+                onConfirm: {
+                    if let app = applicationToUninstall {
+                        systemMonitor.uninstallApplication(app)
+                    }
+                    showingUninstallConfirmation = false
+                    applicationToUninstall = nil
+                },
+                onCancel: {
+                    showingUninstallConfirmation = false
+                    applicationToUninstall = nil
+                }
+            ) : nil
+        )
     }
 }
 
 struct ApplicationRowView: View {
     let application: InstalledApplication
+    let onUninstallRequest: (InstalledApplication) -> Void
     @EnvironmentObject var systemMonitor: SystemMonitor
-    @State private var showingUninstallConfirmation = false
     @State private var isHovered = false
     @State private var launchHovered = false
     @State private var uninstallHovered = false
@@ -206,22 +234,23 @@ struct ApplicationRowView: View {
             
             // Action buttons
             HStack(spacing: 4) {
-                // Launch button
+                // Launch/Stop button
                 Button(action: {
-                    if !application.isRunning {
+                    if application.isRunning {
+                        systemMonitor.quitApplication(application)
+                    } else {
                         NSWorkspace.shared.openApplication(at: application.path, configuration: NSWorkspace.OpenConfiguration())
                     }
                 }) {
-                    Image(systemName: application.isRunning ? "checkmark.circle" : "play.circle")
+                    Image(systemName: application.isRunning ? "stop.circle" : "play.circle")
                         .font(.system(size: 14))
-                        .foregroundColor(application.isRunning ? .green : (launchHovered && !application.isRunning ? .green : .secondary))
+                        .foregroundColor(application.isRunning ? (launchHovered ? .orange : .secondary) : (launchHovered ? .green : .secondary))
                         .frame(width: 24, height: 24)
-                        .background((launchHovered && !application.isRunning) ? Color.green.opacity(0.1) : Color.clear)
+                        .background(launchHovered ? (application.isRunning ? Color.orange.opacity(0.1) : Color.green.opacity(0.1)) : Color.clear)
                         .cornerRadius(4)
                 }
                 .buttonStyle(.plain)
-                .help(application.isRunning ? "Application is running" : "Launch application")
-                .disabled(application.isRunning)
+                .help(application.isRunning ? "Quit application" : "Launch application")
                 .onHover { hovered in
                     launchHovered = hovered
                 }
@@ -229,7 +258,7 @@ struct ApplicationRowView: View {
                 // Uninstall button
                 Button(action: {
                     if application.canUninstall {
-                        showingUninstallConfirmation = true
+                        onUninstallRequest(application)
                     }
                 }) {
                     Image(systemName: "trash")
@@ -244,18 +273,6 @@ struct ApplicationRowView: View {
                 .disabled(!application.canUninstall)
                 .onHover { hovered in
                     uninstallHovered = hovered
-                }
-                .confirmationDialog(
-                    "Uninstall Application",
-                    isPresented: $showingUninstallConfirmation,
-                    titleVisibility: .visible
-                ) {
-                    Button("Move to Trash", role: .destructive) {
-                        systemMonitor.uninstallApplication(application)
-                    }
-                    Button("Cancel", role: .cancel) { }
-                } message: {
-                    Text("Are you sure you want to move \(application.name) to the Trash? This action cannot be undone.")
                 }
             }
         }

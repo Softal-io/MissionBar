@@ -305,4 +305,14 @@ class SystemMonitor: ObservableObject {
             }
         }
     }
+    
+    func quitApplication(_ app: InstalledApplication) {
+        guard app.isRunning else { return }
+        
+        // Find the running application by bundle identifier
+        let runningApps = NSWorkspace.shared.runningApplications
+        if let runningApp = runningApps.first(where: { $0.bundleIdentifier == app.bundleIdentifier }) {
+            runningApp.terminate()
+        }
+    }
 } 
